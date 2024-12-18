@@ -1,111 +1,189 @@
 // ignore_for_file: use_key_in_widget_constructors, library_private_types_in_public_api
 
+import 'dart:math';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart'; // Required for debugPaintSizeEnabled
+
+void main() {
+  runApp(MyApp());
+}
+
+ValueNotifier<bool> debugPaintSizeNotifier =
+    ValueNotifier(debugPaintSizeEnabled);
 
 class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      home: HomeScreen(),
-    );
+    return ValueListenableBuilder(
+        valueListenable: debugPaintSizeNotifier,
+        builder: (context, isDebugPaintEnabled, child) {
+          debugPaintSizeEnabled = isDebugPaintEnabled;
+          return MaterialApp(
+            title: 'Page Routing Demo',
+            theme: ThemeData(primarySwatch: Colors.lightGreen),
+            initialRoute: '/',
+            routes: {
+              '/': (context) => HomePage(),
+              '/second': (context) => SecondPage(),
+              '/third': (context) => ThirdPage(),
+              '/listview': (context) => ListViewPage(),
+            },
+          );
+        });
   }
 }
 
-//Subcomponent that is static so it is defined as stateless
-class Header extends StatelessWidget implements PreferredSizeWidget {
-  final String title;
-
-  const Header({required this.title});
-
-  @override
-  Widget build(BuildContext context) {
-    return AppBar(title: Text(title));
-  }
-
-  @override
-  Size get preferredSize => Size.fromHeight(kToolbarHeight);
-}
-
-class Footer extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      color: Colors.grey[300],
-      padding: EdgeInsets.all(10),
-      child: Text(
-        "Footer Text",
-        textAlign: TextAlign.center,
-        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-      ),
-    );
-  }
-}
-
-class HomeScreen extends StatefulWidget {
-  @override
-  _HomeScreenState createState() => _HomeScreenState();
-}
-
-class _HomeScreenState extends State<HomeScreen> {
-  int counter = 100;
-
-  void darkenPage() {
-    setState(() {
-      if (counter < 900) {
-        counter = counter + 100;
-      }
-    });
-  }
-
-  void lightenPage() {
-    setState(() {
-      if (counter > 100) {
-        counter = counter - 100;
-      }
-    });
-  }
+class HomePage extends StatelessWidget {
+  const HomePage({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        appBar: Header(title: "This is a static title in the header"),
-        bottomNavigationBar: Footer(),
-        body: Stack(
-          children: [
-            Container(color: Colors.blue[counter]),
-            Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      ElevatedButton(
-                          onPressed: () {
-                            lightenPage();
-                          },
-                          child: Text("+ lighten")),
-                      ElevatedButton(
-                          onPressed: () {
-                            darkenPage();
-                          },
-                          child: Text("- darken")),
-                    ],
-                  ),
-                  SizedBox(height: 20),
-                  Container(
-                      padding: EdgeInsets.all(20),
-                      color: Colors.orange,
-                      child: Text(
-                        "This is a centered column",
-                        style: TextStyle(fontSize: 18),
-                      ))
-                ])
-          ],
+        appBar: CustomAppBar(title: "Home Page"),
+        body: Center(
+            child: Column(children: [
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pushNamed(context, '/second');
+            },
+            child: Text('Go to Second Page'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pushNamed(context, '/third');
+            },
+            child: Text('Go to Third Page'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pushNamed(context, '/listview');
+            },
+            child: Text('Go to List View Page'),
+          ),
+        ])));
+  }
+}
+
+class SecondPage extends StatelessWidget {
+  const SecondPage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+        appBar: CustomAppBar(title: "Second Page"),
+        body: Center(
+          child: ElevatedButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: Text('Go back')),
         ));
   }
 }
 
-void main() {
-  runApp(MyApp());
+class ThirdPage extends StatelessWidget {
+  const ThirdPage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+        appBar: CustomAppBar(title: "Third Page"),
+        body: Center(
+          child: ElevatedButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: Text('Go back')),
+        ));
+  }
+}
+
+List<String> items = List.generate(20, (index) => 'Item ${index + 1}');
+
+class ListViewPage extends StatelessWidget {
+  const ListViewPage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+        appBar: CustomAppBar(title: "List View Page"),
+        body: Column(children: [
+          // Center(
+          //     child: SizedBox(
+          //   width: 200,
+          //   height: 300,
+          //   child: dynamicListView,
+          // )),
+          Center(
+              child: SizedBox(
+            width: 200,
+            height: 300,
+            child: simpleListView,
+          )),
+          Center(
+              child: SizedBox(
+            width: 600,
+            height: 100,
+            child: horizontalListView,
+          )), // horizontalListView,
+        ]));
+  }
+}
+
+ListView dynamicListView = ListView.builder(
+    itemBuilder: (context, index) {
+      return Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8.0), //line spacing
+          child: ListTile(
+            title: Text(items[index], textAlign: TextAlign.left),
+          ));
+    },
+    itemCount: items.length);
+
+ListView simpleListView = ListView(
+  children: items
+      .map((item) => ListTile(
+              title: Text(
+            item,
+            textAlign: TextAlign.left,
+          )))
+      .toList(),
+);
+
+ListView horizontalListView = ListView(
+  scrollDirection: Axis.horizontal,
+  children: items
+      .map((item) => Container(
+          width: 50,
+          color: Color.fromRGBO(Random().nextInt(255), Random().nextInt(255),
+              Random().nextInt(255), 1),
+          child: Center(child: Text(item))))
+      .toList(),
+);
+
+class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
+  final String title;
+  const CustomAppBar({required this.title});
+
+  @override
+  Widget build(BuildContext context) {
+    return AppBar(title: Text(title), actions: [
+      IconButton(
+        icon: ValueListenableBuilder<bool>(
+            valueListenable: debugPaintSizeNotifier,
+            builder: (context, isDebugPaintEnabled, child) {
+              return Icon(isDebugPaintEnabled
+                  ? Icons.visibility
+                  : Icons.visibility_off);
+            }),
+        onPressed: () {
+          debugPaintSizeNotifier.value = !debugPaintSizeNotifier.value;
+        },
+      )
+    ]);
+  }
+
+  @override
+  Size get preferredSize => Size.fromHeight(kToolbarHeight);
 }
